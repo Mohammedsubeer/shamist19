@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>💖 Valentine LoveLock AR</title>
+  <title>AR Video Frame</title>
 
   <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
@@ -14,127 +14,112 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
-    body { 
-      margin: 0; 
-      overflow: hidden; 
-      font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+      font-family: Arial, sans-serif;
     }
 
-    .hearts-container {
-      position: fixed;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 1;
+    .hidden {
+      display: none !important;
     }
 
-    .heart {
-      position: absolute;
-      background: linear-gradient(45deg, #ff4081, #ff79a6);
-      width: 20px;
-      height: 20px;
-      transform: rotate(45deg);
-      opacity: 0.7;
-      animation: float 8s infinite ease-in-out;
-    }
-
-    .heart:before,
-    .heart:after {
-      content: '';
-      width: 20px;
-      height: 20px;
-      background: inherit;
-      border-radius: 50%;
-      position: absolute;
-    }
-
-    .heart:before { top: -10px; left: 0; }
-    .heart:after { top: 0; left: -10px; }
-
-    @keyframes float {
-      0%,100% { transform: rotate(45deg) translateY(0); opacity: 0.7; }
-      50% { transform: rotate(45deg) translateY(-20px); opacity: 0.4; }
-    }
-
+    /* Loading Screen */
     #loading-screen {
       position: fixed;
       inset: 0;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      background: #000;
+      color: white;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      z-index: 10000;
-      color: white;
+      z-index: 9999;
     }
 
-    .loading-heart {
-      font-size: 60px;
-      animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-      0%,100% { transform: scale(1); }
-      50% { transform: scale(1.2); }
-    }
-
-    .loading-text {
-      margin-top: 15px;
-      font-size: 18px;
-      color: #ff79a6;
-      letter-spacing: 2px;
-    }
-
-    .hidden { display: none !important; }
-
-    .camera-indicator {
+    /* Bottom Indicator */
+    .indicator {
       position: fixed;
-      bottom: 30px;
+      bottom: 25px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,0.6);
-      padding: 10px 20px;
+      background: rgba(0,0,0,0.7);
+      padding: 10px 18px;
       border-radius: 20px;
       color: white;
       font-size: 14px;
       z-index: 100;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       backdrop-filter: blur(5px);
+    }
+
+    /* Tap to Unmute Overlay */
+    #tap-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 200;
+      color: white;
+      font-size: 18px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    #tap-overlay div {
+      background: rgba(0,0,0,0.8);
+      padding: 20px 30px;
+      border-radius: 30px;
     }
   </style>
 </head>
 
 <body>
 
-<!-- Loading Screen -->
+<!-- Loading -->
 <div id="loading-screen">
-  <div class="loading-heart">💖</div>
-  <div class="loading-text">MagicFrames by FotoMagic</div>
+  <i class="fas fa-spinner fa-spin"></i>
+  <p style="margin-top:10px;">Loading AR Experience</p>
 </div>
 
-<!-- Floating Hearts -->
-<div class="hearts-container" id="hearts-container"></div>
+<!-- Status -->
+<div class="indicator hidden" id="indicator">
+  <i class="fas fa-camera"></i> Scan the image
+</div>
 
-<!-- Camera Indicator -->
-<div class="camera-indicator hidden" id="camera-indicator">
-  <i class="fas fa-video"></i> Scanning for our memory...
+<!-- Tap to Unmute -->
+<div id="tap-overlay" class="hidden">
+  <div>
+    <i class="fas fa-volume-up"></i><br><br>
+    Tap to enable sound
+  </div>
 </div>
 
 <!-- AR Scene -->
 <a-scene
   mindar-image="imageTargetSrc: targets.mind;"
-  vr-mode-ui="enabled: false"
-  device-orientation-permission-ui="enabled: false"
-  loading-screen="enabled: false">
+  vr-mode-ui="enabled:false"
+  device-orientation-permission-ui="enabled:false"
+  loading-screen="enabled:false">
 
   <a-assets>
-    <video id="arVideo" src="machafrndvideo.mp4" loop playsinline crossorigin="anonymous"></video>
+    <video
+      id="arVideo"
+      src="machafrndvideo.mp4"
+      loop
+      muted
+      playsinline
+      crossorigin="anonymous"
+      preload="auto">
+    </video>
   </a-assets>
 
-  <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+  <a-camera position="0 0 0" look-controls="enabled:false"></a-camera>
 
   <a-entity mindar-image-target="targetIndex: 0">
     <a-video
@@ -149,50 +134,51 @@
 </a-scene>
 
 <script>
-  const video = document.querySelector("#arVideo");
-  const videoElement = document.querySelector("a-video");
+  const video = document.getElementById("arVideo");
+  const videoPlane = document.querySelector("a-video");
   const scene = document.querySelector("a-scene");
-  const cameraIndicator = document.getElementById("camera-indicator");
-  const loadingScreen = document.getElementById("loading-screen");
-  const heartsContainer = document.getElementById("hearts-container");
+  const indicator = document.getElementById("indicator");
+  const tapOverlay = document.getElementById("tap-overlay");
+  const loading = document.getElementById("loading-screen");
 
-  // Floating hearts
-  function createHearts() {
-    for (let i = 0; i < 15; i++) {
-      const heart = document.createElement('div');
-      heart.className = 'heart';
-      heart.style.left = Math.random() * 100 + 'vw';
-      heart.style.top = Math.random() * 100 + 'vh';
-      heart.style.animationDelay = Math.random() * 5 + 's';
-      heart.style.width = (Math.random() * 15 + 10) + 'px';
-      heart.style.height = heart.style.width;
-      heartsContainer.appendChild(heart);
+  let isPlaying = false;
+
+  // Target Found
+  scene.addEventListener("targetFound", async () => {
+    indicator.classList.remove("hidden");
+    indicator.innerHTML = '<i class="fas fa-play"></i> Playing video';
+
+    videoPlane.setAttribute("visible", "true");
+    video.muted = true;
+
+    try {
+      await video.play();
+      isPlaying = true;
+      tapOverlay.classList.remove("hidden");
+    } catch (e) {
+      console.log("Autoplay blocked:", e);
     }
-  }
-
-  // AR target found
-  scene.addEventListener("targetFound", () => {
-    cameraIndicator.classList.remove('hidden');
-    cameraIndicator.innerHTML = '<i class="fas fa-heart"></i> Playing our memory...';
-
-    videoElement.setAttribute('visible', 'true');
-    video.play().catch(err => console.log(err));
   });
 
-  // AR target lost
+  // Target Lost
   scene.addEventListener("targetLost", () => {
     video.pause();
-    videoElement.setAttribute('visible', 'false');
-    cameraIndicator.classList.add('hidden');
+    videoPlane.setAttribute("visible", "false");
+    indicator.classList.add("hidden");
+    tapOverlay.classList.add("hidden");
+    isPlaying = false;
+  });
+
+  // Tap to Unmute (REQUIRED FOR iPHONE)
+  tapOverlay.addEventListener("click", () => {
+    video.muted = false;
+    tapOverlay.classList.add("hidden");
   });
 
   // Init
-  window.addEventListener('load', () => {
-    createHearts();
-    setTimeout(() => loadingScreen.classList.add('hidden'), 1500);
+  window.addEventListener("load", () => {
+    setTimeout(() => loading.classList.add("hidden"), 1200);
   });
-
-  video.addEventListener('error', e => console.error("Video error", e));
 </script>
 
 </body>
