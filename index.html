@@ -14,67 +14,30 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: #000;
-      font-family: Arial, sans-serif;
-    }
+    body { margin: 0; overflow: hidden; background: #000; font-family: Arial, sans-serif; }
+    .hidden { display: none !important; }
 
-    .hidden {
-      display: none !important;
-    }
-
-    /* Loading Screen */
     #loading-screen {
-      position: fixed;
-      inset: 0;
-      background: #000;
-      color: white;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
+      position: fixed; inset: 0; background: #000; color: white;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
       z-index: 9999;
     }
 
-    /* Bottom Indicator */
     .indicator {
-      position: fixed;
-      bottom: 25px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.7);
-      padding: 10px 18px;
-      border-radius: 20px;
-      color: white;
-      font-size: 14px;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.7); padding: 10px 18px; border-radius: 20px;
+      color: white; font-size: 14px; z-index: 100; display: flex; gap: 8px;
       backdrop-filter: blur(5px);
     }
 
-    /* Tap to Unmute Overlay */
     #tap-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 200;
-      color: white;
-      font-size: 18px;
-      text-align: center;
-      cursor: pointer;
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 200; color: white; font-size: 18px; text-align: center; cursor: pointer;
     }
 
     #tap-overlay div {
-      background: rgba(0,0,0,0.8);
-      padding: 20px 30px;
-      border-radius: 30px;
+      background: rgba(0,0,0,0.8); padding: 20px 30px; border-radius: 30px;
     }
   </style>
 </head>
@@ -108,74 +71,70 @@
   loading-screen="enabled:false">
 
   <a-assets>
-    <video
-      id="arVideo"
-      src="sha19.mp4"
-      loop
-      muted
-      playsinline
-      crossorigin="anonymous"
-      preload="auto">
-    </video>
+    <video id="video1" src="video1.mp4" loop muted playsinline crossorigin="anonymous" preload="auto"></video>
+    <video id="video2" src="video2.mp4" loop muted playsinline crossorigin="anonymous" preload="auto"></video>
   </a-assets>
 
   <a-camera position="0 0 0" look-controls="enabled:false"></a-camera>
 
+  <!-- Image 1 -->
   <a-entity mindar-image-target="targetIndex: 0">
-    <a-video
-      src="#arVideo"
-      width="1.03"
-      height="1.4"
-      position="0 0 0"
-      visible="false">
-    </a-video>
+    <a-video id="plane1" src="#video1" width="1." height="1.4" visible="false"></a-video>
+  </a-entity>
+
+  <!-- Image 2 -->
+  <a-entity mindar-image-target="targetIndex: 1">
+    <a-video id="plane2" src="#video2" width="1.03" height="1.4" visible="false"></a-video>
   </a-entity>
 
 </a-scene>
 
 <script>
-  const video = document.getElementById("arVideo");
-  const videoPlane = document.querySelector("a-video");
-  const scene = document.querySelector("a-scene");
+  const video1 = document.getElementById("video1");
+  const video2 = document.getElementById("video2");
+  const plane1 = document.getElementById("plane1");
+  const plane2 = document.getElementById("plane2");
+
   const indicator = document.getElementById("indicator");
   const tapOverlay = document.getElementById("tap-overlay");
   const loading = document.getElementById("loading-screen");
 
-  let isPlaying = false;
-
-  // Target Found
-  scene.addEventListener("targetFound", async () => {
-    indicator.classList.remove("hidden");
-    indicator.innerHTML = '<i class="fas fa-play"></i> Playing video';
-
-    videoPlane.setAttribute("visible", "true");
+  function playVideo(video, plane) {
+    plane.setAttribute("visible", "true");
     video.muted = true;
 
-    try {
-      await video.play();
-      isPlaying = true;
+    video.play().then(() => {
       tapOverlay.classList.remove("hidden");
-    } catch (e) {
-      console.log("Autoplay blocked:", e);
-    }
-  });
+      indicator.classList.remove("hidden");
+      indicator.innerHTML = '<i class="fas fa-play"></i> Playing video';
+    }).catch(() => {});
+  }
 
-  // Target Lost
-  scene.addEventListener("targetLost", () => {
+  function stopVideo(video, plane) {
     video.pause();
-    videoPlane.setAttribute("visible", "false");
+    plane.setAttribute("visible", "false");
+    tapOverlay.classList.add("hidden");
     indicator.classList.add("hidden");
-    tapOverlay.classList.add("hidden");
-    isPlaying = false;
+  }
+
+  document.querySelectorAll("[mindar-image-target]").forEach((target, index) => {
+    target.addEventListener("targetFound", () => {
+      if (index === 0) playVideo(video1, plane1);
+      if (index === 1) playVideo(video2, plane2);
+    });
+
+    target.addEventListener("targetLost", () => {
+      if (index === 0) stopVideo(video1, plane1);
+      if (index === 1) stopVideo(video2, plane2);
+    });
   });
 
-  // Tap to Unmute (REQUIRED FOR iPHONE)
   tapOverlay.addEventListener("click", () => {
-    video.muted = false;
+    video1.muted = false;
+    video2.muted = false;
     tapOverlay.classList.add("hidden");
   });
 
-  // Init
   window.addEventListener("load", () => {
     setTimeout(() => loading.classList.add("hidden"), 1200);
   });
